@@ -1,0 +1,18 @@
+syntax: glob
+*/bin/*
+*/obj/*
+*/obj_core/*
+*.git/*
+*.svn/*
+*.vs/*
+*.vscode/*
+*.suo
+*.dll
+*.pdb
+*.user
+*.userprefs
+*.vspx
+*.psess
+*.idc
+*.orig
+*.speccache
