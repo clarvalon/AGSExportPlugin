@@ -25,6 +25,7 @@ namespace Clarvalon.XAGE.Global
 
         // Ags Conversion Paths & Extras
         public string PathAgsCodeFolder;
+        public string PathAgsFontsFolder;
         public string PathAgsSpritesFolder;
         public string PathAgsRoomIMGsFolder;
         public string PathAgsRoomHotSpots;
@@ -76,6 +77,7 @@ namespace Clarvalon.XAGE.Global
 
             // Ags -> Xage paths
             PathAgsCodeFolder = string.Empty;
+            PathAgsFontsFolder = string.Empty;
             PathAgsSpritesFolder = string.Empty;
             PathAgsRoomIMGsFolder = string.Empty;
             PathAgsRoomHotSpots = string.Empty;

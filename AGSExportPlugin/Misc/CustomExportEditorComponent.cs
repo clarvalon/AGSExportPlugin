@@ -39,7 +39,8 @@ namespace AGSExportPlugin
         private string PathRoomRegions; 
         private string PathRoomWalkAreas; 
         private string PathRoomWalkBehinds; 
-        private string PathCharacterImages; 
+        private string PathCharacterImages;
+        private string PathFonts;
         private string PathAGSCode; 
 
         // External folders - may rework these to bring them in
@@ -430,6 +431,7 @@ namespace AGSExportPlugin
             // We need to make paths relative again, so reset
             ResetPaths();
             proj.PathAgsRoomIMGsFolder = PathRoomBackgrounds;
+            proj.PathAgsFontsFolder = PathFonts;
             proj.PathAgsSpritesFolder = PathCharacterImages;
             proj.PathAgsRoomHotSpots = PathRoomHotSpots;
             proj.PathAgsRoomRegions = PathRoomRegions;
@@ -462,6 +464,7 @@ namespace AGSExportPlugin
 
         private void CreateRequiredFolders()
         {
+            PathFonts = CreateDir(PathFonts);
             PathRoomBackgrounds = CreateDir(PathRoomBackgrounds);
             PathRoomHotSpots = CreateDir(PathRoomHotSpots);
             PathRoomRegions = CreateDir(PathRoomRegions);
@@ -487,6 +490,7 @@ namespace AGSExportPlugin
         {
             // Have to restore here so we can run in in the same AGS session
             // Also need them relative when saved
+            PathFonts = @"AGS Fonts\";
             PathRoomBackgrounds = @"AGS Room Backgrounds\";
             PathRoomHotSpots = @"AGS Room HotSpots\";
             PathRoomRegions = @"AGS Room Regions\";
@@ -516,6 +520,20 @@ namespace AGSExportPlugin
             foreach (FileInfo f in d.GetFiles("*.ash"))
             {
                 CopyFile(f.FullName, PathAGSCode);
+            }
+
+            // Copy all Fonts
+            foreach (FileInfo f in d.GetFiles("*.wfn"))
+            {
+                CopyFile(f.FullName, PathFonts);
+            }
+            foreach (FileInfo f in d.GetFiles("*.sci"))
+            {
+                CopyFile(f.FullName, PathFonts);
+            }
+            foreach (FileInfo f in d.GetFiles("*.ttf"))
+            {
+                CopyFile(f.FullName, PathFonts);
             }
 
             // Copy User.ICO (if exists)
