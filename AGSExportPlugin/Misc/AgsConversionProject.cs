@@ -45,6 +45,9 @@ namespace Clarvalon.XAGE.Global
         public string Namespace;
         public string WalkableAreasToImportFile;
         public bool KeepExistingGameSettings;
+        public bool KeepExistingCSharp;
+        public bool KeepExistingFonts;
+        public List<string> StructEnums;
 
         // Paths - Relative
         public string CSharpProject;
@@ -90,6 +93,7 @@ namespace Clarvalon.XAGE.Global
             PathAgsSpeechFolder = string.Empty;
             PathFinalXageFolder = string.Empty;
             WalkableAreasToImportFile = string.Empty;
+            StructEnums = new List<string>();
 
             // Purple colour tends to be default in AGS
             SpriteAgsBackColourRed = 255;

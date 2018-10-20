@@ -53,12 +53,13 @@
             this.btnGetOggFolder = new System.Windows.Forms.Button();
             this.tbOggFolder = new System.Windows.Forms.TextBox();
             this.label8 = new System.Windows.Forms.Label();
+            this.lblPotrace = new System.Windows.Forms.LinkLabel();
             this.SuspendLayout();
             // 
             // lblStatus
             // 
             this.lblStatus.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblStatus.Location = new System.Drawing.Point(94, 359);
+            this.lblStatus.Location = new System.Drawing.Point(94, 403);
             this.lblStatus.Name = "lblStatus";
             this.lblStatus.Size = new System.Drawing.Size(382, 48);
             this.lblStatus.TabIndex = 0;
@@ -67,7 +68,7 @@
             // btnOK
             // 
             this.btnOK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnOK.Location = new System.Drawing.Point(320, 410);
+            this.btnOK.Location = new System.Drawing.Point(320, 454);
             this.btnOK.Name = "btnOK";
             this.btnOK.Size = new System.Drawing.Size(75, 23);
             this.btnOK.TabIndex = 1;
@@ -78,7 +79,7 @@
             // btnCancel
             // 
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnCancel.Location = new System.Drawing.Point(401, 410);
+            this.btnCancel.Location = new System.Drawing.Point(401, 454);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(75, 23);
             this.btnCancel.TabIndex = 2;
@@ -90,7 +91,7 @@
             // 
             this.lblHeader.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.lblHeader.AutoSize = true;
-            this.lblHeader.Location = new System.Drawing.Point(48, 359);
+            this.lblHeader.Location = new System.Drawing.Point(48, 403);
             this.lblHeader.Name = "lblHeader";
             this.lblHeader.Size = new System.Drawing.Size(40, 13);
             this.lblHeader.TabIndex = 3;
@@ -141,7 +142,7 @@
             // 
             this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.label1.Location = new System.Drawing.Point(9, 106);
+            this.label1.Location = new System.Drawing.Point(9, 168);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(467, 64);
             this.label1.TabIndex = 8;
@@ -150,7 +151,7 @@
             // btnGetMP3Folder
             // 
             this.btnGetMP3Folder.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnGetMP3Folder.Location = new System.Drawing.Point(447, 171);
+            this.btnGetMP3Folder.Location = new System.Drawing.Point(447, 233);
             this.btnGetMP3Folder.Name = "btnGetMP3Folder";
             this.btnGetMP3Folder.Size = new System.Drawing.Size(29, 23);
             this.btnGetMP3Folder.TabIndex = 11;
@@ -162,7 +163,7 @@
             // 
             this.tbMP3Folder.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.tbMP3Folder.Location = new System.Drawing.Point(135, 173);
+            this.tbMP3Folder.Location = new System.Drawing.Point(135, 235);
             this.tbMP3Folder.Name = "tbMP3Folder";
             this.tbMP3Folder.Size = new System.Drawing.Size(306, 20);
             this.tbMP3Folder.TabIndex = 10;
@@ -170,7 +171,7 @@
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(12, 176);
+            this.label4.Location = new System.Drawing.Point(12, 238);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(101, 13);
             this.label4.TabIndex = 9;
@@ -179,7 +180,7 @@
             // btnGetWAVFolder
             // 
             this.btnGetWAVFolder.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnGetWAVFolder.Location = new System.Drawing.Point(447, 223);
+            this.btnGetWAVFolder.Location = new System.Drawing.Point(447, 285);
             this.btnGetWAVFolder.Name = "btnGetWAVFolder";
             this.btnGetWAVFolder.Size = new System.Drawing.Size(29, 23);
             this.btnGetWAVFolder.TabIndex = 14;
@@ -191,7 +192,7 @@
             // 
             this.tbWAVFolder.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.tbWAVFolder.Location = new System.Drawing.Point(135, 225);
+            this.tbWAVFolder.Location = new System.Drawing.Point(135, 287);
             this.tbWAVFolder.Name = "tbWAVFolder";
             this.tbWAVFolder.Size = new System.Drawing.Size(306, 20);
             this.tbWAVFolder.TabIndex = 13;
@@ -199,7 +200,7 @@
             // label5
             // 
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(12, 228);
+            this.label5.Location = new System.Drawing.Point(12, 290);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(112, 13);
             this.label5.TabIndex = 12;
@@ -228,7 +229,7 @@
             // 
             this.lblNotes.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblNotes.Location = new System.Drawing.Point(12, 302);
+            this.lblNotes.Location = new System.Drawing.Point(12, 364);
             this.lblNotes.Name = "lblNotes";
             this.lblNotes.Size = new System.Drawing.Size(464, 39);
             this.lblNotes.TabIndex = 17;
@@ -238,7 +239,7 @@
             // btnGetSpeechFolder
             // 
             this.btnGetSpeechFolder.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnGetSpeechFolder.Location = new System.Drawing.Point(447, 249);
+            this.btnGetSpeechFolder.Location = new System.Drawing.Point(447, 311);
             this.btnGetSpeechFolder.Name = "btnGetSpeechFolder";
             this.btnGetSpeechFolder.Size = new System.Drawing.Size(29, 23);
             this.btnGetSpeechFolder.TabIndex = 20;
@@ -250,7 +251,7 @@
             // 
             this.tbSpeechFolder.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.tbSpeechFolder.Location = new System.Drawing.Point(135, 251);
+            this.tbSpeechFolder.Location = new System.Drawing.Point(135, 313);
             this.tbSpeechFolder.Name = "tbSpeechFolder";
             this.tbSpeechFolder.Size = new System.Drawing.Size(306, 20);
             this.tbSpeechFolder.TabIndex = 19;
@@ -258,7 +259,7 @@
             // label7
             // 
             this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(12, 254);
+            this.label7.Location = new System.Drawing.Point(12, 316);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(110, 13);
             this.label7.TabIndex = 18;
@@ -267,7 +268,7 @@
             // btnGetOggFolder
             // 
             this.btnGetOggFolder.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnGetOggFolder.Location = new System.Drawing.Point(447, 197);
+            this.btnGetOggFolder.Location = new System.Drawing.Point(447, 259);
             this.btnGetOggFolder.Name = "btnGetOggFolder";
             this.btnGetOggFolder.Size = new System.Drawing.Size(29, 23);
             this.btnGetOggFolder.TabIndex = 23;
@@ -279,7 +280,7 @@
             // 
             this.tbOggFolder.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.tbOggFolder.Location = new System.Drawing.Point(135, 199);
+            this.tbOggFolder.Location = new System.Drawing.Point(135, 261);
             this.tbOggFolder.Name = "tbOggFolder";
             this.tbOggFolder.Size = new System.Drawing.Size(306, 20);
             this.tbOggFolder.TabIndex = 22;
@@ -287,18 +288,30 @@
             // label8
             // 
             this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(12, 202);
+            this.label8.Location = new System.Drawing.Point(12, 264);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(103, 13);
             this.label8.TabIndex = 21;
             this.label8.Text = "Music Folder (OGG):";
             // 
+            // lblPotrace
+            // 
+            this.lblPotrace.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblPotrace.LinkArea = new System.Windows.Forms.LinkArea(0, 0);
+            this.lblPotrace.Location = new System.Drawing.Point(9, 104);
+            this.lblPotrace.Name = "lblPotrace";
+            this.lblPotrace.Size = new System.Drawing.Size(467, 64);
+            this.lblPotrace.TabIndex = 24;
+            this.lblPotrace.Text = resources.GetString("lblPotrace.Text");
+            // 
             // DialogExportToXage
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(488, 445);
+            this.ClientSize = new System.Drawing.Size(488, 489);
             this.ControlBox = false;
+            this.Controls.Add(this.lblPotrace);
             this.Controls.Add(this.btnGetOggFolder);
             this.Controls.Add(this.tbOggFolder);
             this.Controls.Add(this.label8);
@@ -360,6 +373,6 @@
         private System.Windows.Forms.Button btnGetOggFolder;
         private System.Windows.Forms.TextBox tbOggFolder;
         private System.Windows.Forms.Label label8;
-
+        private System.Windows.Forms.LinkLabel lblPotrace;
     }
 }

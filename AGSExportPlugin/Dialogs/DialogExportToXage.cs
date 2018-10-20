@@ -15,6 +15,7 @@ using System.IO;
 using System.Windows.Forms;
 using Clarvalon.XAGE.Global;
 using AGSExportPlugin;
+using System.Diagnostics;
 
 namespace CustomExportPlugin
 {
@@ -34,6 +35,16 @@ namespace CustomExportPlugin
             CheckEnableOK();
             CheckChecked();
             lblHeader.Visible = false;
+
+            // Update Potrace linklabel
+            LinkLabel.Link link = new LinkLabel.Link();
+            string linkText = "SourceForge";
+            string linkDestination = @"http://potrace.sourceforge.net/#downloading";
+            link.LinkData = linkDestination;
+            link.Start = lblPotrace.Text.IndexOf(linkText);
+            link.Length = linkText.Length;
+            lblPotrace.Links.Add(link);
+            lblPotrace.LinkClicked += LblPotrace_LinkClicked;
             
             // Attempt to load previous path using game name:
             string gameName = sloppyRef.editor.CurrentGame.Settings.GameName.Replace(":", "");
@@ -57,6 +68,13 @@ namespace CustomExportPlugin
                 tbEmptyFolder.Text = lastPath;
                 sloppyRef.PopDebugMessage("7");
             }
+        }
+
+        private void LblPotrace_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            var link = e.Link;
+            ProcessStartInfo sInfo = new ProcessStartInfo((string)link.LinkData);
+            Process.Start(sInfo);
         }
 
         private void btnCancel_Click(object sender, EventArgs e)
@@ -117,14 +135,23 @@ namespace CustomExportPlugin
             }
 
             // Start preparation
-            PrepError = ComponentRef.DoPreparation(desiredEmptyFolder, generateFolderSuffix, tbMP3Folder.Text, tbWAVFolder.Text, tbSpeechFolder.Text, tbOggFolder.Text, this);
-            if (PrepError == false)
+            try
             {
-                DialogResult = DialogResult.OK;
+                PrepError = ComponentRef.DoPreparation(desiredEmptyFolder, generateFolderSuffix, tbMP3Folder.Text, tbWAVFolder.Text, tbSpeechFolder.Text, tbOggFolder.Text, this);
+                if (PrepError == false)
+                {
+                    DialogResult = DialogResult.OK;
+                }
+                else
+                {
+                    MessageBox.Show("Error encountered!");
+                    DialogResult = DialogResult.Cancel;
+                }
             }
-            else
+            catch (Exception e)
             {
-                MessageBox.Show("Error encountered!");
+                MessageBox.Show("Unhandled exception: " + e.Message);
+                MessageBox.Show("Stack Trace: " + e.StackTrace);
                 DialogResult = DialogResult.Cancel;
             }
         }

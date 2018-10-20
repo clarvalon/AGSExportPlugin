@@ -16,6 +16,7 @@ using System.IO;
 using AGS.Types;
 using CustomExportPlugin;
 using Clarvalon.XAGE.Global;
+using System.Diagnostics;
 
 namespace AGSExportPlugin
 {
@@ -41,7 +42,12 @@ namespace AGSExportPlugin
         private string PathRoomWalkBehinds; 
         private string PathCharacterImages;
         private string PathFonts;
-        private string PathAGSCode; 
+        private string PathAGSCode;
+
+        private string PathAgsExe;
+        private FileInfo PoTraceFile;
+        private FileInfo MkBitmapFile;
+        private bool UsePoTrace;
 
         // External folders - may rework these to bring them in
         // Also need to rework these to handle new(er) AGS audio files
@@ -58,6 +64,9 @@ namespace AGSExportPlugin
             MenuCommands newCommands = new MenuCommands(MenuID);
             newCommands.Commands.Add(new MenuCommand(ExportRoomData, "Prepare game for XAGE"));
             editor.GUIController.AddMenuItems(this, newCommands);
+
+            PathAgsExe = System.Reflection.Assembly.GetEntryAssembly().Location;
+            PathAgsExe = Directory.GetParent(PathAgsExe).FullName;
         }
 
         private void WriteBackgrounds(XmlTextWriter output, ILoadedRoom room, string roomName)
@@ -161,7 +170,8 @@ namespace AGSExportPlugin
                         foreach (RoomHotspot hotspot in room.Hotspots)
                         {
                             string alphaFileName;
-                            if (CreateAlphaMap(output, backBMP, room, getType, roomName, hotspot.ID, hotspot.Name, directory, filename, ref xPos, ref yPos, out alphaFileName))
+                            if (CreateAlphaMap(output, backBMP, room, getType, roomName, hotspot.ID, hotspot.Name, directory, filename, ref xPos, ref yPos, out alphaFileName, false) ||
+                                hotspot.Name.IndexOf("hHotspot") == -1)
                             {
                                 output.WriteStartElement("Hotspot");
                                 output.WriteAttributeString("ID", hotspot.ID.ToString());
@@ -181,7 +191,7 @@ namespace AGSExportPlugin
                         foreach (RoomRegion region in room.Regions)
                         {
                             string alphaFileName;
-                            if (CreateAlphaMap(output, backBMP, room, getType, roomName, region.ID, region.ID.ToString(), directory, filename, ref xPos, ref yPos, out alphaFileName))
+                            if (CreateAlphaMap(output, backBMP, room, getType, roomName, region.ID, region.ID.ToString(), directory, filename, ref xPos, ref yPos, out alphaFileName, false))
                             {
                                 output.WriteStartElement("Region");
                                 output.WriteAttributeString("ID", region.ID.ToString());
@@ -204,7 +214,7 @@ namespace AGSExportPlugin
                         {
                             // Note:  Walkable Area bmps not cropped 
                             string alphaFileName;
-                            if (CreateAlphaMap(output, backBMP, room, getType, roomName, walkable.ID, walkable.ID.ToString(), directory, filename, ref xPos, ref yPos, out alphaFileName))
+                            if (CreateAlphaMap(output, backBMP, room, getType, roomName, walkable.ID, walkable.ID.ToString(), directory, filename, ref xPos, ref yPos, out alphaFileName, UsePoTrace))
                             {
                                 output.WriteStartElement("WalkableArea");
                                 output.WriteAttributeString("ID", walkable.ID.ToString());
@@ -215,7 +225,8 @@ namespace AGSExportPlugin
                                 output.WriteElementString("UseContinuousScaling", walkable.UseContinuousScaling.ToString());
                                 output.WriteElementString("XPos", xPos.ToString()); // add these so we know where to place
                                 output.WriteElementString("YPos", yPos.ToString()); // ... anim frame in XAGE
-                                output.WriteElementString("AlphaFileName", alphaFileName);
+                                if (UsePoTrace)
+                                    output.WriteElementString("SvgFileName", alphaFileName);
                                 output.WriteEndElement(); // WalkableArea
                             }
                         }
@@ -224,7 +235,7 @@ namespace AGSExportPlugin
                         foreach (RoomWalkBehind walkbehind in room.WalkBehinds)
                         {
                             string alphaFileName;
-                            if (CreateAlphaMap(output, backBMP, room, getType, roomName, walkbehind.ID, walkbehind.ID.ToString(), directory, filename, ref xPos, ref yPos, out alphaFileName))
+                            if (CreateAlphaMap(output, backBMP, room, getType, roomName, walkbehind.ID, walkbehind.ID.ToString(), directory, filename, ref xPos, ref yPos, out alphaFileName, false))
                             {
                                 output.WriteStartElement("WalkBehind");
                                 output.WriteAttributeString("ID", walkbehind.ID.ToString());
@@ -385,7 +396,16 @@ namespace AGSExportPlugin
             PathExternalMP3MusicFolder = mp3Folder;
             PathExternalWavFolder = wavFolder;
             PathExternalSpeechFolder = speechFolder;
-          
+
+            // Only use PoTrace if the required executables are in the base AGS folder
+            PoTraceFile = new FileInfo(Path.Combine(PathAgsExe, "potrace.exe"));
+            MkBitmapFile = new FileInfo(Path.Combine(PathAgsExe, "mkbitmap.exe"));
+            UsePoTrace = PoTraceFile.Exists && MkBitmapFile.Exists;
+
+            //MessageBox.Show(PathAgsExe);
+            //MessageBox.Show(PoTraceFile.FullName);
+            //MessageBox.Show(UsePoTrace.ToString());
+
             string roomXmlFilename = Path.Combine(PathAGSCode, "AGS Rooms.xml");
             using (XmlTextWriter output = new XmlTextWriter(roomXmlFilename, Encoding.UTF8))
             {
@@ -547,7 +567,7 @@ namespace AGSExportPlugin
                 f.CopyTo(toDirectory + @"\" + f.Name, true);
         }
 
-        private bool CreateAlphaMap(XmlTextWriter output, Bitmap backBMP, ILoadedRoom room, RoomAreaMaskType getType, string roomName, int ID, string description, string directory, string filename, ref int xPos, ref int yPos, out string alphaFileName)
+        private bool CreateAlphaMap(XmlTextWriter output, Bitmap backBMP, ILoadedRoom room, RoomAreaMaskType getType, string roomName, int ID, string description, string directory, string filename, ref int xPos, ref int yPos, out string alphaFileName, bool createAsSvg)
         {
             alphaFileName = string.Empty;
 
@@ -555,71 +575,109 @@ namespace AGSExportPlugin
             if (ID == 0)
                 return false;
 
-            // Create output bmp!
-            using (Bitmap filteredBMP = new Bitmap(room.Width, room.Height))
-            using (Graphics gHot = Graphics.FromImage(filteredBMP))
+            // Create output AlphaMap (i.e. BooleanMatrix)
+
+            int minX = Int32.MaxValue, minY = Int32.MaxValue, maxX = -1, maxY = -1;
+            int keptPixels = 0;
+
+            for (int xx = 0; xx < room.Width; xx += 1)
             {
-                int minX = Int32.MaxValue, minY = Int32.MaxValue, maxX = -1, maxY = -1;
-                int keptPixels = 0;
-
-                for (int xx = 0; xx < room.Width; xx += 1)
+                for (int yy = 0; yy < room.Height; yy += 1)
                 {
-                    for (int yy = 0; yy < room.Height; yy += 1)
+                    int hs = editor.RoomController.GetAreaMaskPixel(getType, xx, yy);
+                    if (hs == ID)
                     {
-                        int hs = editor.RoomController.GetAreaMaskPixel(getType, xx, yy);
-                        if (hs == ID)
-                        {
-                            keptPixels += 1;
-                            if (xx < minX) minX = xx;
-                            if (xx > maxX) maxX = xx;
-                            if (yy < minY) minY = yy;
-                            if (yy > maxY) maxY = yy;
-                        }
+                        keptPixels += 1;
+                        if (xx < minX) minX = xx;
+                        if (xx > maxX) maxX = xx;
+                        if (yy < minY) minY = yy;
+                        if (yy > maxY) maxY = yy;
                     }
                 }
-
-                // Done comparing bitmaps - did we find any pixels?  If not then return false
-                if (keptPixels <= 0 || minX > maxX || minY > maxY)
-                {
-                    return false;
-                }
-
-                // Otherwise convert this into a BooleanMatrix
-                // Lets add 1 to maxX and maxY to ensure we get the whole bmp
-                maxX += 1;
-                maxY += 1;
-                int bmWidth = maxX - minX;
-                int bmHeight = maxY - minY;
-                BooleanMatrix bm = new BooleanMatrix(bmWidth, bmHeight);
-
-                for (int xx = 0; xx < bmWidth; xx += 1)
-                {
-                    int imageX = minX + xx;
-                    for (int yy = 0; yy < bmHeight; yy += 1)
-                    {
-                        int imageY = minY + yy;
-                        int hs = editor.RoomController.GetAreaMaskPixel(getType, imageX, imageY);
-                        if (hs == ID)
-                        {
-                            bm[xx, yy] = true;
-                        }
-                    }
-                }
-
-                // Save BooleanMatrix
-                alphaFileName = directory + GetValidPath(roomName + "_" + filename + "_" + description + ".alpha");
-                SaveBooleanMatrix(bm, alphaFileName);
-
-                // Return alphaFileName as relative
-                alphaFileName = alphaFileName.Replace(PathRootDirectory, "");
-
-                // return XY pos
-                xPos = minX;
-                yPos = minY;  // to get bottom left corner
-                
-                // Create corresponding RoomXML data back at calling function
-                return true;
             }
+
+            // Done comparing bitmaps - did we find any pixels?  If not then return false
+            if (keptPixels <= 0 || minX > maxX || minY > maxY)
+            {
+                return false;
+            }
+
+            // Otherwise convert this into a BooleanMatrix
+            // Lets add 1 to maxX and maxY to ensure we get the whole bmp
+            maxX += 1;
+            maxY += 1;
+            int bmWidth = maxX - minX;
+            int bmHeight = maxY - minY;
+            BooleanMatrix bm = new BooleanMatrix(bmWidth, bmHeight);
+
+            for (int xx = 0; xx < bmWidth; xx += 1)
+            {
+                int imageX = minX + xx;
+                for (int yy = 0; yy < bmHeight; yy += 1)
+                {
+                    int imageY = minY + yy;
+                    int hs = editor.RoomController.GetAreaMaskPixel(getType, imageX, imageY);
+                    if (hs == ID)
+                    {
+                        bm[xx, yy] = true;
+                    }
+                }
+            }
+
+            // Save BooleanMatrix
+            string shortName = GetValidPath(roomName + "_" + filename + "_" + description + ".alpha");
+            alphaFileName = directory + shortName;
+            SaveBooleanMatrix(bm, alphaFileName);
+
+            // Return alphaFileName as relative
+            alphaFileName = alphaFileName.Replace(PathRootDirectory, "");
+
+            // return XY pos
+            xPos = minX;
+            yPos = minY;  // to get bottom left corner
+
+            if (UsePoTrace && createAsSvg)
+            {
+                // Get temporary file for bitmap
+                FileInfo fi = new FileInfo(Path.Combine(Path.GetTempPath(), shortName.Replace(".alpha", ".bmp")));
+
+                // Get bitmap from BooleanMatrix (have to uncrop it to preserve original resolution)
+                using (Bitmap tempBitmap = new Bitmap(room.Width, room.Height))
+                {
+                    using (Bitmap croppedBitmap = bm.ToBitmap())
+                    {
+                        using (FastBitmap tempBitmapFast = tempBitmap.FastLock())
+                        {
+                            tempBitmapFast.CopyRegion(croppedBitmap, new Rectangle(0, 0, croppedBitmap.Width, croppedBitmap.Height), new Rectangle(xPos, yPos, croppedBitmap.Width, croppedBitmap.Height));
+                        }
+                        tempBitmap.Save(fi.FullName, ImageFormat.Bmp);
+                    }
+                }
+
+                // Get output svc filename
+                FileInfo svgFI = new FileInfo(directory + GetValidPath(roomName + "_" + filename + "_" + description + ".svg"));
+
+                // Run potrace on bitmap
+                string arguments = $"\"{fi.FullName}\" -o \"{svgFI.FullName}\" --svg -u 1 -x 1 -A 0 -a 0 --flat -i";
+                ProcessStartInfo psi = new ProcessStartInfo(PoTraceFile.FullName, arguments) { CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden };
+                Process p = Process.Start(psi);
+                p.WaitForExit();
+
+                // Check SVG created
+                // TODO
+
+                // Delete temporary bitmap
+                File.Delete(fi.FullName);
+
+                // Delete Alphamap too - obsolete?
+                // TODO
+
+                alphaFileName = alphaFileName.Replace(".alpha", ".svg"); // make sure svg is stored  in XML document
+            }
+
+            // Create corresponding RoomXML data back at calling function
+            return true;
+
         }
 
         private void SaveBooleanMatrix(BooleanMatrix bm, string fileName)

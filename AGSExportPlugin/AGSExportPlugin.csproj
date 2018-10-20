@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>AGSExportPlugin</RootNamespace>
     <AssemblyName>AGS.Plugin.ExportToXAGE</AssemblyName>
-    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -41,6 +41,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -49,6 +50,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="AGS.Types, Version=3.1.2.82, Culture=neutral, processorArchitecture=MSIL">
@@ -75,15 +77,19 @@
       <DependentUpon>DialogSuccess.cs</DependentUpon>
     </Compile>
     <Compile Include="Misc\AgsConversionProject.cs" />
+    <Compile Include="Misc\BooleanMatrix %28partial%29.cs" />
     <Compile Include="Misc\BooleanMatrix.cs" />
     <Compile Include="Misc\CustomExportPlugin.cs" />
+    <Compile Include="Misc\FastBitmap.cs" />
     <Compile Include="Misc\GenericXmlSerializer.cs" />
     <Compile Include="Misc\CustomExportEditorComponent.cs" />
     <Compile Include="Misc\Utf8StringWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
+    <None Include="app.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Dialogs\DialogExportToXage.resx">
