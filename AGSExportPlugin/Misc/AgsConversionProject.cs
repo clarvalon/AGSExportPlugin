@@ -32,9 +32,7 @@ namespace Clarvalon.XAGE.Global
         public string PathAgsRoomRegions;
         public string PathAgsRoomWalkAreas;
         public string PathAgsRoomWalkBehinds;
-        public string PathAgsSoundsFolder;
-        public string PathAgsMusicFolder;
-        public string PathAgsOggMusicFolder;
+        public string PathAgsAudioFolder;
         public string PathAgsSpeechFolder;
 
         public byte SpriteAgsBackColourRed;
@@ -87,9 +85,7 @@ namespace Clarvalon.XAGE.Global
             PathAgsRoomRegions = string.Empty;
             PathAgsRoomWalkAreas = string.Empty;
             PathAgsRoomWalkBehinds = string.Empty;
-            PathAgsSoundsFolder = string.Empty;
-            PathAgsMusicFolder = string.Empty;
-            PathAgsOggMusicFolder = string.Empty;
+            PathAgsAudioFolder = string.Empty;
             PathAgsSpeechFolder = string.Empty;
             PathFinalXageFolder = string.Empty;
             WalkableAreasToImportFile = string.Empty;

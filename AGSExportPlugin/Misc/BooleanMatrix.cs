@@ -136,5 +136,51 @@ namespace Clarvalon.XAGE.Global
                 return returnMatrix;
             }
         }
-    }
+
+        public int ReduceNoise()
+        {
+            // Slow ...
+            int pixelsRemoved = 0;
+            for (int x = 0; x < width; x += 1)
+            {
+                for (int y = 0; y < height; y += 1)
+                {
+                    if (this[x, y])
+                        if (ReduceNoise(x, y))
+                            pixelsRemoved += 1;
+                }
+            }
+            return pixelsRemoved;
+        }
+
+        public const int NoiseRange = 1;
+        public const int NoiseCount = 2;
+
+        private bool ReduceNoise(int x, int y)
+        {
+            int xMin = Math.Max(x - NoiseRange, 0);
+            int yMin = Math.Max(y - NoiseRange, 0);
+
+            int xMax = Math.Min(x + NoiseRange, width);
+            int yMax = Math.Min(y + NoiseRange, height);
+
+            int found = 0;
+            for (int xx = xMin; xx < xMax; xx += 1)
+            {
+                for (int yy = yMin; yy < yMax; yy += 1)
+                {
+                    if (this[xx, yy])
+                    {
+                        found += 1;
+                        if (found > NoiseCount)
+                            return false;
+                    }
+                }
+            }
+
+            // Not found enough - remove
+            this[x, y] = false;
+            return true;
+        }
+}
 }

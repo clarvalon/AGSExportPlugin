@@ -35,6 +35,23 @@ namespace CustomExportPlugin
             CheckEnableOK();
             CheckChecked();
             lblHeader.Visible = false;
+            string pathAgsExe = System.Reflection.Assembly.GetEntryAssembly().Location;
+            pathAgsExe = Directory.GetParent(pathAgsExe).FullName;
+
+            // Update Potrace & ffmpeg available labels
+            FileInfo poTraceFile = new FileInfo(Path.Combine(pathAgsExe, "potrace.exe"));
+            FileInfo mkBitmapFile = new FileInfo(Path.Combine(pathAgsExe, "mkbitmap.exe"));
+            FileInfo ffmpegFile = new FileInfo(Path.Combine(pathAgsExe, "ffmpeg.exe"));
+            if (poTraceFile.Exists && mkBitmapFile.Exists)
+            {
+                lblUsePotrace.Text = "YES";
+                lblUsePotrace.ForeColor = Color.Green;
+            }
+            if (ffmpegFile.Exists)
+            {
+                lblUseFfmpeg.Text = "YES";
+                lblUseFfmpeg.ForeColor = Color.Green;
+            }
 
             // Update Potrace linklabel
             LinkLabel.Link link = new LinkLabel.Link();
@@ -45,7 +62,17 @@ namespace CustomExportPlugin
             link.Length = linkText.Length;
             lblPotrace.Links.Add(link);
             lblPotrace.LinkClicked += LblPotrace_LinkClicked;
-            
+
+            // Update Potrace linklabel
+            LinkLabel.Link link2 = new LinkLabel.Link();
+            linkText = "here";
+            linkDestination = @"https://www.ffmpeg.org/download.html#build-windows";
+            link2.LinkData = linkDestination;
+            link2.Start = lblFfmpeg.Text.IndexOf(linkText);
+            link2.Length = linkText.Length;
+            lblFfmpeg.Links.Add(link2);
+            lblFfmpeg.LinkClicked += LblFfmpeg_LinkClicked;
+
             // Attempt to load previous path using game name:
             string gameName = sloppyRef.editor.CurrentGame.Settings.GameName.Replace(":", "");
             string appDir = Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "XAGE");
@@ -71,6 +98,13 @@ namespace CustomExportPlugin
         }
 
         private void LblPotrace_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            var link = e.Link;
+            ProcessStartInfo sInfo = new ProcessStartInfo((string)link.LinkData);
+            Process.Start(sInfo);
+        }
+
+        private void LblFfmpeg_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             var link = e.Link;
             ProcessStartInfo sInfo = new ProcessStartInfo((string)link.LinkData);
@@ -105,14 +139,6 @@ namespace CustomExportPlugin
             lblStatus.Visible = true;
             tbEmptyFolder.Enabled = false;
             btnGetEmptyFolder.Enabled = false;
-            tbMP3Folder.Enabled = false;
-            tbWAVFolder.Enabled = false;
-            tbOggFolder.Enabled = false;
-            tbSpeechFolder.Enabled = false;
-            btnGetMP3Folder.Enabled = false;
-            btnGetWAVFolder.Enabled = false;
-            btnGetOggFolder.Enabled = false;
-            btnGetSpeechFolder.Enabled = false;
             btnOK.Enabled = false;
             this.Update();
             this.Refresh();
@@ -137,7 +163,7 @@ namespace CustomExportPlugin
             // Start preparation
             try
             {
-                PrepError = ComponentRef.DoPreparation(desiredEmptyFolder, generateFolderSuffix, tbMP3Folder.Text, tbWAVFolder.Text, tbSpeechFolder.Text, tbOggFolder.Text, this);
+                PrepError = ComponentRef.DoPreparation(desiredEmptyFolder, generateFolderSuffix, this);
                 if (PrepError == false)
                 {
                     DialogResult = DialogResult.OK;
@@ -182,13 +208,6 @@ namespace CustomExportPlugin
 
                 projFileName = Path.Combine(folderName, projFileName);
                 AgsConversionProject conProj = GenericXmlSerializer.DeSerializeFromFile<AgsConversionProject>(projFileName);
-                if (conProj != null)
-                {
-                    tbMP3Folder.Text = conProj.PathAgsMusicFolder; 
-                    tbWAVFolder.Text = conProj.PathAgsSoundsFolder; 
-                    tbSpeechFolder.Text = conProj.PathAgsSpeechFolder;
-                    tbOggFolder.Text = conProj.PathAgsOggMusicFolder;
-                }
             }
         }
 
@@ -220,31 +239,7 @@ namespace CustomExportPlugin
             }
             tbEmptyFolder.Text = browser.SelectedPath;
         }
-
-        private void btnGetMP3Folder_Click(object sender, EventArgs e)
-        {
-            FolderBrowserDialog browser = new FolderBrowserDialog();
-            browser.Description = "Select the folder you have stored your mp3 music.";
-            browser.SelectedPath = tbMP3Folder.Text;
-            if (browser.ShowDialog() != DialogResult.OK)
-            {
-                return;
-            }
-            tbMP3Folder.Text = browser.SelectedPath;
-        }
-
-        private void btnGetWAVFolder_Click(object sender, EventArgs e)
-        {
-            FolderBrowserDialog browser = new FolderBrowserDialog();
-            browser.Description = "Select the folder you have stored your wav sounds.";
-            browser.SelectedPath = tbWAVFolder.Text;
-            if (browser.ShowDialog() != DialogResult.OK)
-            {
-                return;
-            }
-            tbWAVFolder.Text = browser.SelectedPath;
-        }
-
+        
         private void chkSpecifyFolder_CheckedChanged(object sender, EventArgs e)
         {
             CheckChecked();
@@ -263,30 +258,6 @@ namespace CustomExportPlugin
                 tbEmptyFolder.Enabled = false;
                 btnGetEmptyFolder.Enabled = false;
             }
-        }
-
-        private void btnGetSpeechFolder_Click(object sender, EventArgs e)
-        {
-            FolderBrowserDialog browser = new FolderBrowserDialog();
-            browser.Description = "Select the folder you have stored your speech sounds.";
-            browser.SelectedPath = tbSpeechFolder.Text;
-            if (browser.ShowDialog() != DialogResult.OK)
-            {
-                return;
-            }
-            tbSpeechFolder.Text = browser.SelectedPath;
-        }
-
-        private void btnGetOggFolder_Click(object sender, EventArgs e)
-        {
-            FolderBrowserDialog browser = new FolderBrowserDialog();
-            browser.Description = "Select the folder you have stored your ogg music.";
-            browser.SelectedPath = tbOggFolder.Text;
-            if (browser.ShowDialog() != DialogResult.OK)
-            {
-                return;
-            }
-            tbOggFolder.Text = browser.SelectedPath;
         }
     }
 }

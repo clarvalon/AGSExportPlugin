@@ -17,6 +17,7 @@ using AGS.Types;
 using CustomExportPlugin;
 using Clarvalon.XAGE.Global;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace AGSExportPlugin
 {
@@ -43,19 +44,16 @@ namespace AGSExportPlugin
         private string PathCharacterImages;
         private string PathFonts;
         private string PathAGSCode;
+        private string PathAudioFolder;
+        private string PathSpeechFolder;
 
         private string PathAgsExe;
         private FileInfo PoTraceFile;
         private FileInfo MkBitmapFile;
+        private FileInfo FfmpegFile;
         private bool UsePoTrace;
-
-        // External folders - may rework these to bring them in
-        // Also need to rework these to handle new(er) AGS audio files
-        private string PathExternalMP3MusicFolder;
-        private string PathExternalOggMusicFolder;
-        private string PathExternalWavFolder;
-        private string PathExternalSpeechFolder;
-
+        private bool UseFfmpeg;
+        
         // Constructor
         public CustomExportEditorComponent(IAGSEditor owningEditor)
         {
@@ -251,12 +249,32 @@ namespace AGSExportPlugin
             }
         }
 
+        private void WriteElementStringIfExists(string propertyName, object obj, XmlTextWriter output)
+        {
+            // TODO:  Cache properties per type if turns out to be slow?
+            var properties = obj.GetType().GetProperties();
+            foreach(var pi in properties)
+            {
+                if (pi.Name == propertyName)
+                {
+                    object propertyValue = pi.GetValue(obj, null);
+                    string strValue = propertyValue.ToString();
+                    output.WriteElementString(propertyName, strValue);
+                }
+            }
+        }
+
         private void WriteRoomObject(RoomObject obj, XmlTextWriter output)
         {
             output.WriteStartElement("Object");
             output.WriteAttributeString("ID", obj.ID.ToString());
             output.WriteElementString("Baseline", obj.Baseline.ToString());
             output.WriteElementString("BaselineOverridden", obj.BaselineOverridden.ToString());
+            
+            // Older versions don't have object clickable, so use reflection instead of assuming it exists
+            // output.WriteElementString("Clickable", clickable);
+            WriteElementStringIfExists("Clickable", obj, output);
+
             output.WriteElementString("Description", obj.Description);
             output.WriteElementString("EffectiveBaseline", obj.EffectiveBaseline.ToString());
             output.WriteElementString("Image", obj.Image.ToString());
@@ -376,7 +394,7 @@ namespace AGSExportPlugin
                 MessageBox.Show(message);
         }
 
-        public bool DoPreparation(string rootDirectory, bool generateFolderSuffix, string mp3Folder, string wavFolder, string speechFolder, string oggMusicFolder, DialogExportToXage dia)
+        public bool DoPreparation(string rootDirectory, bool generateFolderSuffix, DialogExportToXage dia)
         {
             List<string> roomIDList = new List<string>();
             string gameName = editor.CurrentGame.Settings.GameName.Replace(":", "");
@@ -391,16 +409,15 @@ namespace AGSExportPlugin
 
             PathRootDirectory = rootDirectory;
             CreateRequiredFolders();
-            
-            PathExternalOggMusicFolder = oggMusicFolder;
-            PathExternalMP3MusicFolder = mp3Folder;
-            PathExternalWavFolder = wavFolder;
-            PathExternalSpeechFolder = speechFolder;
-
+      
             // Only use PoTrace if the required executables are in the base AGS folder
             PoTraceFile = new FileInfo(Path.Combine(PathAgsExe, "potrace.exe"));
             MkBitmapFile = new FileInfo(Path.Combine(PathAgsExe, "mkbitmap.exe"));
             UsePoTrace = PoTraceFile.Exists && MkBitmapFile.Exists;
+
+            // Only use ffmpeg is the required executable is in the base AGS folder
+            FfmpegFile = new FileInfo(Path.Combine(PathAgsExe, "ffmpeg.exe"));
+            UseFfmpeg = FfmpegFile.Exists;
 
             //MessageBox.Show(PathAgsExe);
             //MessageBox.Show(PoTraceFile.FullName);
@@ -438,7 +455,7 @@ namespace AGSExportPlugin
 
             // Copy original *.agf file and script files etc.
             dia.UpdateStatus("Exporting Code");
-            CopyRequiredAgsFiles();
+            CopyRequiredAgsFiles(dia);
 
             // All done ok?  Then create our *.a2x file which holds our conversion info
             // We browse to this in XAGE in order to process coversion
@@ -458,10 +475,8 @@ namespace AGSExportPlugin
             proj.PathAgsRoomWalkAreas = PathRoomWalkAreas;
             proj.PathAgsRoomWalkBehinds = PathRoomWalkBehinds;
             proj.PathAgsCodeFolder = PathAGSCode;
-            proj.PathAgsMusicFolder = PathExternalMP3MusicFolder;
-            proj.PathAgsOggMusicFolder = PathExternalOggMusicFolder;
-            proj.PathAgsSoundsFolder = PathExternalWavFolder;
-            proj.PathAgsSpeechFolder = PathExternalSpeechFolder;
+            proj.PathAgsSpeechFolder = PathSpeechFolder;
+            proj.PathAgsAudioFolder = PathAudioFolder;
             proj.GameID = editor.CurrentGame.Settings.GameName;
             
             // Save it
@@ -492,6 +507,8 @@ namespace AGSExportPlugin
             PathRoomWalkBehinds = CreateDir(PathRoomWalkBehinds);
             PathCharacterImages = CreateDir(PathCharacterImages);
             PathAGSCode = CreateDir(PathAGSCode);
+            PathAudioFolder = CreateDir(PathAudioFolder);
+            PathSpeechFolder = CreateDir(PathSpeechFolder);
         }
 
         private string CreateDir(string dir)
@@ -518,9 +535,11 @@ namespace AGSExportPlugin
             PathRoomWalkBehinds = @"AGS Room WalkBehinds\";
             PathCharacterImages = @"AGS Sprites\";
             PathAGSCode = @"AGS Code\";
+            PathSpeechFolder = @"AGS Speech\";
+            PathAudioFolder = @"AGS Audio\";
         }
         
-        private void CopyRequiredAgsFiles()
+        private void CopyRequiredAgsFiles(DialogExportToXage dia)
         {
             string OriginalPath = editor.CurrentGame.DirectoryPath + @"\";
        
@@ -556,8 +575,106 @@ namespace AGSExportPlugin
                 CopyFile(f.FullName, PathFonts);
             }
 
+            // Copy or Convert all game Audio to .ogg
+            try
+            {
+                ProcessAudio(dia);
+            }
+            catch(Exception e)
+            {
+                MessageBox.Show("Error processing audio - skipping: " + e.Message);
+            }
+
+            // Copy or Convert all Speech audio to .ogg
+            try
+            {
+                ProcessSpeech(dia);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Error processing speech - skipping: " + e.Message);
+            }
+
             // Copy User.ICO (if exists)
             CopyFile(OriginalPath + "USER.ico", PathRootDirectory);
+        }
+
+        public void ProcessAudio(DialogExportToXage dia)
+        {
+            // TODO:  Older AGS Audio ... how are these handled?
+            string OriginalPath = editor.CurrentGame.DirectoryPath + @"\";
+            string audioCachePath = Path.Combine(OriginalPath, "AudioCache");
+            DirectoryInfo d = new DirectoryInfo(audioCachePath);
+            if (!d.Exists)
+                return;
+
+            foreach (FileInfo originalFile in d.GetFiles("*.*"))
+            {
+                // TODO:  Determine destination name - update based on original filename, not AudioCache version?
+                FileInfo destinationFile = new FileInfo(Path.Combine(PathAudioFolder, Path.ChangeExtension(originalFile.Name, ".ogg")));
+
+                // If destination file exists with same modified date then don't bother doing anything
+                if (destinationFile.Exists)
+                {
+                    if (destinationFile.LastWriteTime == originalFile.LastWriteTime)
+                        continue;
+                }
+
+                ProcessAudioFile(originalFile, destinationFile, dia);
+            }
+        }
+
+        public void ProcessAudioFile(FileInfo originalFile, FileInfo destinationFile, DialogExportToXage dia)
+        {
+            // Different actions based on file type:
+            // .mp3 and .wav - pass through ffmpeg (if in use) in order to produce .ogg
+            // .ogg - just copy to destination folder
+
+            switch (originalFile.Extension.ToLower())
+            {
+                case ".mp3":
+                case ".wav":
+
+                    if (!UseFfmpeg)
+                        return;
+                    dia.UpdateStatus("Converting " + originalFile.Name);
+
+                    // Run FFMPEG.exe to convert audio to .ogg file
+                    string arguments = $"-y -i \"{originalFile.FullName}\" -acodec libvorbis -vn \"{destinationFile.FullName}\"";
+                    ProcessStartInfo psi = new ProcessStartInfo(FfmpegFile.FullName, arguments) { CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden };
+                    Process p = Process.Start(psi);
+                    p.WaitForExit();
+                    return;
+            
+                case ".ogg":
+                    // Just copy raw .ogg file over
+                    dia.UpdateStatus("Copying " + originalFile.Name);
+                    CopyFile(originalFile.FullName, destinationFile.DirectoryName);
+                    return;
+            }
+        }
+
+        public void ProcessSpeech(DialogExportToXage dia)
+        {
+            string OriginalPath = editor.CurrentGame.DirectoryPath + @"\";
+            string speechPath = Path.Combine(OriginalPath, "Speech");
+            DirectoryInfo d = new DirectoryInfo(speechPath);
+            if (!d.Exists)
+                return;
+
+            foreach (FileInfo originalFile in d.GetFiles("*.*"))
+            {
+                FileInfo destinationFile = new FileInfo(Path.Combine(PathSpeechFolder, Path.ChangeExtension(originalFile.Name, ".ogg")));
+
+                // If destination file exists with same modified date then don't bother doing anything
+                if (destinationFile.Exists)
+                {
+                    if (destinationFile.LastWriteTime == originalFile.LastWriteTime)
+                        continue;
+                }
+
+                ProcessAudioFile(originalFile, destinationFile, dia);
+            }
         }
 
         private void CopyFile(string originalFile, string toDirectory)
@@ -569,6 +686,7 @@ namespace AGSExportPlugin
 
         private bool CreateAlphaMap(XmlTextWriter output, Bitmap backBMP, ILoadedRoom room, RoomAreaMaskType getType, string roomName, int ID, string description, string directory, string filename, ref int xPos, ref int yPos, out string alphaFileName, bool createAsSvg)
         {
+            bool debugCreateAlphaMap = false;
             alphaFileName = string.Empty;
 
             // Skip if hotspot 0?
@@ -602,7 +720,7 @@ namespace AGSExportPlugin
                 return false;
             }
 
-            // Otherwise convert this into a BooleanMatrix
+            // Foound pixels - convert this into a BooleanMatrix
             // Lets add 1 to maxX and maxY to ensure we get the whole bmp
             maxX += 1;
             maxY += 1;
@@ -624,6 +742,41 @@ namespace AGSExportPlugin
                 }
             }
 
+            // AGS Mask half the size unless it's a walkbehind?
+            int scale = 1;
+            int pixelAccuracy = 1;
+            if (room.Resolution == RoomResolution.HighRes && getType != RoomAreaMaskType.WalkBehinds)
+            {
+                scale = 2;
+                pixelAccuracy = 5;
+            }
+            
+            if (scale == 2)
+            {
+                // Get rid of stray pixels
+                //int pixelsRemoved = bm.ReduceNoise();
+                //MessageBox.Show($"PixelsRemoved: {pixelsRemoved} of {keptPixels}");
+
+                // Blow up booleanmatrix to twice the size
+                BooleanMatrix bm2 = new BooleanMatrix(bmWidth * scale, bmHeight * scale);
+                for (int xx = 0; xx < bmWidth; xx += 1)
+                {
+                    for (int yy = 0; yy < bmHeight; yy += 1)
+                    {
+                        if (bm[xx,yy])
+                        {
+                            int sx = xx * scale;
+                            int sy = yy * scale;
+                            bm2[sx, sy] = true;
+                            bm2[sx + 1, sy] = true;
+                            bm2[sx, sy + 1] = true;
+                            bm2[sx + 1, sy + 1] = true;
+                        }
+                    }
+                }
+                bm = bm2;
+            }
+
             // Save BooleanMatrix
             string shortName = GetValidPath(roomName + "_" + filename + "_" + description + ".alpha");
             alphaFileName = directory + shortName;
@@ -633,9 +786,9 @@ namespace AGSExportPlugin
             alphaFileName = alphaFileName.Replace(PathRootDirectory, "");
 
             // return XY pos
-            xPos = minX;
-            yPos = minY;  // to get bottom left corner
-
+            xPos = minX * scale;
+            yPos = minY * scale; 
+  
             if (UsePoTrace && createAsSvg)
             {
                 // Get temporary file for bitmap
@@ -646,6 +799,13 @@ namespace AGSExportPlugin
                 {
                     using (Bitmap croppedBitmap = bm.ToBitmap())
                     {
+                        if (debugCreateAlphaMap)
+                        {
+                            MessageBox.Show($"CroppedBitmap: W{croppedBitmap.Width} H{croppedBitmap.Height}" + Environment.NewLine
+                                + $"BooleanMatrix: W{bm.Width} H{bm.Height}" + Environment.NewLine
+                                + $"TempBitmap: W{tempBitmap.Width} H{tempBitmap.Height}" + Environment.NewLine
+                                + $"xPos: {xPos}  yPos:{yPos}");
+                        }
                         using (FastBitmap tempBitmapFast = tempBitmap.FastLock())
                         {
                             tempBitmapFast.CopyRegion(croppedBitmap, new Rectangle(0, 0, croppedBitmap.Width, croppedBitmap.Height), new Rectangle(xPos, yPos, croppedBitmap.Width, croppedBitmap.Height));
@@ -658,7 +818,7 @@ namespace AGSExportPlugin
                 FileInfo svgFI = new FileInfo(directory + GetValidPath(roomName + "_" + filename + "_" + description + ".svg"));
 
                 // Run potrace on bitmap
-                string arguments = $"\"{fi.FullName}\" -o \"{svgFI.FullName}\" --svg -u 1 -x 1 -A 0 -a 0 --flat -i";
+                string arguments = $"\"{fi.FullName}\" -o \"{svgFI.FullName}\" --svg -u {pixelAccuracy} -x 1 -A 0 -a 0 --flat -i";
                 ProcessStartInfo psi = new ProcessStartInfo(PoTraceFile.FullName, arguments) { CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden };
                 Process p = Process.Start(psi);
                 p.WaitForExit();
@@ -667,10 +827,10 @@ namespace AGSExportPlugin
                 // TODO
 
                 // Delete temporary bitmap
-                File.Delete(fi.FullName);
-
-                // Delete Alphamap too - obsolete?
-                // TODO
+                if (!debugCreateAlphaMap)
+                {
+                    File.Delete(fi.FullName);
+                }
 
                 alphaFileName = alphaFileName.Replace(".alpha", ".svg"); // make sure svg is stored  in XML document
             }

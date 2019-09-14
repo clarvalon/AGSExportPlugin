@@ -117,10 +117,10 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="label1.Text" xml:space="preserve">
-    <value>Optionally, you can also ensure the audio is prepared.  Ensure all music is converted to MP3 format and placed in its own folder using the existing naming convention (i.e.  music1.mp3, music2.mp3 etc).  Likewise, do the same for sounds but store in WAV format.  You may find Audacity useful for this.</value>
-  </data>
   <data name="lblPotrace.Text" xml:space="preserve">
     <value>Optionally, if you place potrace.exe and mkbitmap.exe in the root AGS executable folder, the conversion will attempt to vectorise the Walkable Areas so you do not have to set these up manually.  These are not included due to their use of a restrictive license (GPL).  Download the appropriate windows executables here from SourceForge.</value>
+  </data>
+  <data name="lblFfmpeg.Text" xml:space="preserve">
+    <value>Optionally, if you place ffmpeg.exe in the root AGS executable folder, the conversion will attempt to convert all audio to Ogg Vorbis.  This is not included due to its restrictive license (GPL).  Download ffmpeg.exe here.</value>
   </data>
 </root>
