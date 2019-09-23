@@ -18,6 +18,7 @@ using CustomExportPlugin;
 using Clarvalon.XAGE.Global;
 using System.Diagnostics;
 using System.Reflection;
+using System.Linq;
 
 namespace AGSExportPlugin
 {
@@ -349,7 +350,6 @@ namespace AGSExportPlugin
 
             output.WriteElementString("PlayerCharacterView", roomLoaded.PlayerCharacterView.ToString());
             output.WriteElementString("PlayMusicOnRoomLoad", roomLoaded.PlayMusicOnRoomLoad.ToString());
-
             roomLoaded.Properties.ToXml(output);
             
             output.WriteElementString("Resolution", roomLoaded.Resolution.ToString());
@@ -595,6 +595,16 @@ namespace AGSExportPlugin
                 MessageBox.Show("Error processing speech - skipping: " + e.Message);
             }
 
+            // Update OldAudio.xml with old Audio references - essentially create AudioClips from old Sound/SOUND1.ogg, Music/MUSIC4.wav files
+            try
+            {
+                ProcessOldAudio(dia);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Error processing old audio - skipping: " + e.Message);
+            }
+
             // Copy User.ICO (if exists)
             CopyFile(OriginalPath + "USER.ico", PathRootDirectory);
         }
@@ -674,6 +684,56 @@ namespace AGSExportPlugin
                 }
 
                 ProcessAudioFile(originalFile, destinationFile, dia);
+            }
+        }
+
+        public void ProcessOldAudio(DialogExportToXage dia)
+        {
+            // Create some AudioClips based off the files in the old Music & Sound directories
+            // These are serialized to OldAudio.xml and processed as actual AudioClips as part of the conversion
+
+            int index = 1;
+            var clips = new List<OldAudioClip>();
+
+            // Old "Music" folder
+            string OriginalPath = editor.CurrentGame.DirectoryPath + @"\";
+            string musicPath = Path.Combine(OriginalPath, "Music");
+            ProcessOldAudio(dia, musicPath, "MUSIC", clips, ref index);
+
+            // Old "Sound" folder
+            string soundPath = Path.Combine(OriginalPath, "Sound");
+            ProcessOldAudio(dia, soundPath, "SOUND", clips, ref index);
+
+            if (clips.Count == 0)
+                return;
+
+            // Save OldAudio.xml
+            string oldAudioXmlFilename = Path.Combine(PathAGSCode, "OldAudio.xml");
+            GenericXmlSerializer.SerializeToFile(oldAudioXmlFilename, clips);
+        }
+
+        public void ProcessOldAudio(DialogExportToXage dia, string path, string shortPattern, List<OldAudioClip> clips, ref int index)
+        {
+            DirectoryInfo d = new DirectoryInfo(path);
+            if (!d.Exists)
+                return;
+
+            int localIndex = 1;
+            string pattern = shortPattern + "*.*";
+            var files = d.GetFiles(pattern);
+            // The ordering of the files has to match the ordering when the AudioCache was created, otherwise this isn't going to work
+            // Don't see anywhere in AGS where it maintains the relationship between the Music/Sound files and those in the AudioCache
+            foreach (FileInfo originalFile in files)
+            {
+                string scriptID = Path.GetFileNameWithoutExtension(originalFile.Name);
+
+                // We cannot use AudioClip as older versions
+                // So we instead we use a dummy class for this - it's just for serialization
+                OldAudioClip ac = new OldAudioClip(scriptID, index);
+                clips.Add(ac);
+
+                index += 1;
+                localIndex += 1;
             }
         }
 

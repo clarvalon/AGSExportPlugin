@@ -83,6 +83,7 @@
     <Compile Include="Misc\FastBitmap.cs" />
     <Compile Include="Misc\GenericXmlSerializer.cs" />
     <Compile Include="Misc\CustomExportEditorComponent.cs" />
+    <Compile Include="Misc\OldAudioClip.cs" />
     <Compile Include="Misc\Utf8StringWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
