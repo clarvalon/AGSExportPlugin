@@ -29,6 +29,7 @@ namespace AGSExportPlugin
     {
         public IAGSEditor editor;
 
+        private readonly char[] badPathChars = new char[] { '\'', '?', ':' };
         private const string MenuID = "ExportMenu";
         private const string ExportRoomData = "ExportRoomData";
         private const string CompID = "CustomExportEditorComponent";
@@ -86,12 +87,21 @@ namespace AGSExportPlugin
             output.WriteEndElement(); // Backgrounds
         }
 
-        private void WriteCharacterIMGs(ISpriteFolder currentSpriteFolder, string parentFolder)
+        public string ReplaceInvalidChars(string filename)
         {
+            string result = string.Join("_", filename.Split(Path.GetInvalidPathChars()));
+            result = string.Join("_", filename.Split(badPathChars));
+            return result;
+        }
+
+        private void WriteCharacterIMGs(DialogExportToXage dia, ISpriteFolder currentSpriteFolder, string parentFolder)
+        {
+            dia.UpdateStatus($"Exporting Sprites ({parentFolder})");
             int numSprites = currentSpriteFolder.Sprites.Count; 
             string relativeFolder = Path.Combine(parentFolder, currentSpriteFolder.Name);
             if (relativeFolder == "Main")
                 relativeFolder = string.Empty;
+            relativeFolder = ReplaceInvalidChars(relativeFolder);
             string fullFolderName = Path.Combine(PathCharacterImages, relativeFolder);
 
             if (!Directory.Exists(fullFolderName))
@@ -123,7 +133,7 @@ namespace AGSExportPlugin
             // Do same for subfolders
             foreach (ISpriteFolder sf in currentSpriteFolder.SubFolders)
             {
-                WriteCharacterIMGs(sf, relativeFolder);
+                WriteCharacterIMGs(dia, sf, relativeFolder);
             }
         }
 
@@ -428,7 +438,7 @@ namespace AGSExportPlugin
             {
                 // Export Character Sprite IMGs
                 dia.UpdateStatus("Exporting Sprites");
-                WriteCharacterIMGs(editor.CurrentGame.Sprites, "");
+                WriteCharacterIMGs(dia, editor.CurrentGame.Sprites, "");
     
                 // Rooms
                 output.Formatting = Formatting.Indented;

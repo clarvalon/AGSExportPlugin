@@ -176,6 +176,10 @@ namespace CustomExportPlugin
             }
             catch (Exception e)
             {
+                string error = e.Message;
+                if (e.InnerException != null)
+                    error += Environment.NewLine + e.InnerException.Message;
+
                 MessageBox.Show("Unhandled exception: " + e.Message);
                 MessageBox.Show("Stack Trace: " + e.StackTrace);
                 DialogResult = DialogResult.Cancel;
