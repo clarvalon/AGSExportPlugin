@@ -38,6 +38,7 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 * [Denzil Quixode](http://www.adventuregamestudio.co.uk/forums/index.php?action=profile;u=511) for his initial work on the XML Export code - see [this thread](http://www.adventuregamestudio.co.uk/forums/index.php?topic=37481.msg492564#msg492564).
 * Peter Selinger for [Potrace](http://potrace.sourceforge.net).
+* BitSetsNet for [RoaringBitset](https://github.com/BitSetsNet/BitSetsNet/blob/master/LICENSE).
 * Plus numerous people who have contributed their AGS game source code to help improve the quality of the conversion process.
 
 ## Known Issues

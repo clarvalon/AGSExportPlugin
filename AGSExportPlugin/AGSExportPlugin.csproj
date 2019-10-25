@@ -79,11 +79,18 @@
     <Compile Include="Misc\AgsConversionProject.cs" />
     <Compile Include="Misc\BooleanMatrix %28partial%29.cs" />
     <Compile Include="Misc\BooleanMatrix.cs" />
+    <Compile Include="Misc\BooleanMatrixOld.cs" />
     <Compile Include="Misc\CustomExportPlugin.cs" />
     <Compile Include="Misc\FastBitmap.cs" />
     <Compile Include="Misc\GenericXmlSerializer.cs" />
     <Compile Include="Misc\CustomExportEditorComponent.cs" />
     <Compile Include="Misc\OldAudioClip.cs" />
+    <Compile Include="Misc\RoaringBitset\ArrayContainer.cs" />
+    <Compile Include="Misc\RoaringBitset\BitsetContainer.cs" />
+    <Compile Include="Misc\RoaringBitset\Container.cs" />
+    <Compile Include="Misc\RoaringBitset\RoaringArray.cs" />
+    <Compile Include="Misc\RoaringBitset\RoaringBitset.cs" />
+    <Compile Include="Misc\RoaringBitset\Utility.cs" />
     <Compile Include="Misc\Utf8StringWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -5,39 +5,39 @@
  * Released under the MIT License.  See LICENSE for details. */
 #endregion
 
+using BitsetsNET;
 using System;
 using System.IO;
 
 namespace Clarvalon.XAGE.Global
 {
     /// <summary>
-    /// Reasonably space-efficient way of storing 2D array of bools - similar to BitArray.
-    /// Typical usage of this is for Bitmap HotSpots.
+    /// Very space-efficient way of storing 2D array of bools - similar to BitArray.
+    /// Typical usage of this is for Bitmap HotSpots, as GetPixel is slow on Textures.
+    /// This is a decent trade off between storage space, memory and access speed.
+    /// Can be optionally optimised if number of set pixels exceeds more than half of those available.
     /// </summary>
     public partial class BooleanMatrix
     {
         private int height;
         private int width;
-        private byte[] data;
+        private bool inverted;
+        RoaringBitset rb;
 
-        public BooleanMatrix(int width, int height, byte[] data = null)
+        public BooleanMatrix(int width, int height) 
         {
             this.height = height;
             this.width = width;
+            this.inverted = false;
+            this.rb = RoaringBitset.Create(new int[] { });
+        }
 
-            // Calculate the needed number of bits and bytes
-            int bitCount = this.height * this.width;
-            int byteCount = bitCount >> 3;
-            if (bitCount % 8 != 0)
-            {
-                byteCount++;
-            }
-
-            // Allocate the needed number of bytes
-            if (data == null)
-                this.data = new byte[byteCount];
-            else
-                this.data = data;
+        public BooleanMatrix(int width, int height, bool inverted, RoaringBitset rb)
+        {
+            this.height = height;
+            this.width = width;
+            this.inverted = inverted;
+            this.rb = rb;
         }
 
         /// <summary>
@@ -62,6 +62,17 @@ namespace Clarvalon.XAGE.Global
         }
 
         /// <summary>
+        /// Gets whether has been inverted to improve performance
+        /// </summary>
+        public bool Inverted
+        {
+            get
+            {
+                return inverted;
+            }
+        }
+
+        /// <summary>
         /// Gets/Sets the value at the specified row and column index.
         /// </summary>
         /// <param name="yPos"></param>
@@ -77,10 +88,12 @@ namespace Clarvalon.XAGE.Global
                 if (xPos < 0 || xPos >= width)
                     return false;
 
-                int pos = yPos * width + xPos;
-                int index = pos % 8;
-                pos >>= 3;
-                return (data[pos] & (1 << index)) != 0;
+                int pos = (yPos * width) + xPos;
+                
+                if (inverted)
+                   return !rb.Get(pos);
+                else
+                   return rb.Get(pos);
             }
             set
             {
@@ -90,97 +103,59 @@ namespace Clarvalon.XAGE.Global
                 if (xPos < 0 || xPos >= width)
                     return;
 
-                int pos = yPos * width + xPos;
-                int index = pos % 8;
-                pos >>= 3;
-                data[pos] &= (byte)(~(1 << index));
-
-                if (value)
-                {
-                    data[pos] |= (byte)(1 << index);
-                }
+                int pos = (yPos * width) + xPos;
+    
+                if (inverted)
+                    rb.Set(pos, !value);
+                else
+                    rb.Set(pos, value);
             }
-        }
-
-        public byte[] GetBytes()
-        {
-            return data;
         }
 
         public void WriteToStream(Stream stream)
         {
             using (BinaryWriter bw = new BinaryWriter(stream))
             {
-                // Write Width & Height
+                // Write Width, Height, Inverted before RoaringBitset
                 bw.Write(Width);
                 bw.Write(Height);
-
-                // Write Content Length (so we know how much to read)
-                bw.Write(data.Length);
-
-                // Write Content (byte array)
-                bw.Write(data);
+                bw.Write(Inverted);
+                rb.Serialize(bw);
             }
         }
 
         public static BooleanMatrix ReadFromStream(Stream stream)
         {
+            int width;
+            int height;
+            bool inverted;
+            RoaringBitset rb;
             using (BinaryReader br = new BinaryReader(stream))
             {
-                int width = br.ReadInt32();
-                int height = br.ReadInt32();
-                int byteLength = br.ReadInt32();
-                byte[] data = br.ReadBytes(byteLength);
-
-                BooleanMatrix returnMatrix = new BooleanMatrix(width, height, data);
-                return returnMatrix;
+                width = br.ReadInt32();
+                height = br.ReadInt32();
+                inverted = br.ReadBoolean();
+                rb = RoaringBitset.Deserialize(br);
             }
+
+            BooleanMatrix bm = new BooleanMatrix(width, height, inverted, rb);
+            return bm;
         }
 
-        public int ReduceNoise()
+        public void Optimise(int countSet)
         {
-            // Slow ...
-            int pixelsRemoved = 0;
-            for (int x = 0; x < width; x += 1)
+            // If over half pixels have been set then store the reverse of this RoaringBitmap (i.e. flip it)
+            // This will lower the memory usage
+            int size = width * height;
+            int threshold = size / 2;
+
+            if (countSet > threshold)
             {
-                for (int y = 0; y < height; y += 1)
-                {
-                    if (this[x, y])
-                        if (ReduceNoise(x, y))
-                            pixelsRemoved += 1;
-                }
+                rb.Flip(0, size);
+                inverted = true;
             }
-            return pixelsRemoved;
+            else
+                inverted = false;
         }
-
-        public const int NoiseRange = 1;
-        public const int NoiseCount = 2;
-
-        private bool ReduceNoise(int x, int y)
-        {
-            int xMin = Math.Max(x - NoiseRange, 0);
-            int yMin = Math.Max(y - NoiseRange, 0);
-
-            int xMax = Math.Min(x + NoiseRange, width);
-            int yMax = Math.Min(y + NoiseRange, height);
-
-            int found = 0;
-            for (int xx = xMin; xx < xMax; xx += 1)
-            {
-                for (int yy = yMin; yy < yMax; yy += 1)
-                {
-                    if (this[xx, yy])
-                    {
-                        found += 1;
-                        if (found > NoiseCount)
-                            return false;
-                    }
-                }
-            }
-
-            // Not found enough - remove
-            this[x, y] = false;
-            return true;
-        }
-}
+    }
 }

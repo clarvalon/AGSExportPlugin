@@ -796,8 +796,9 @@ namespace AGSExportPlugin
             maxY += 1;
             int bmWidth = maxX - minX;
             int bmHeight = maxY - minY;
-            BooleanMatrix bm = new BooleanMatrix(bmWidth, bmHeight);
 
+            int count = 0;
+            BooleanMatrix bm = new BooleanMatrix(bmWidth, bmHeight);
             for (int xx = 0; xx < bmWidth; xx += 1)
             {
                 int imageX = minX + xx;
@@ -808,6 +809,7 @@ namespace AGSExportPlugin
                     if (hs == ID)
                     {
                         bm[xx, yy] = true;
+                        count += 1;
                     }
                 }
             }
@@ -823,12 +825,10 @@ namespace AGSExportPlugin
             
             if (scale == 2)
             {
-                // Get rid of stray pixels
-                //int pixelsRemoved = bm.ReduceNoise();
-                //MessageBox.Show($"PixelsRemoved: {pixelsRemoved} of {keptPixels}");
-
                 // Blow up booleanmatrix to twice the size
                 BooleanMatrix bm2 = new BooleanMatrix(bmWidth * scale, bmHeight * scale);
+
+                count = 0;
                 for (int xx = 0; xx < bmWidth; xx += 1)
                 {
                     for (int yy = 0; yy < bmHeight; yy += 1)
@@ -837,15 +837,21 @@ namespace AGSExportPlugin
                         {
                             int sx = xx * scale;
                             int sy = yy * scale;
+                            
                             bm2[sx, sy] = true;
                             bm2[sx + 1, sy] = true;
                             bm2[sx, sy + 1] = true;
                             bm2[sx + 1, sy + 1] = true;
+                            count += 4;
                         }
                     }
                 }
+
                 bm = bm2;
             }
+
+            // Optimise before saving (will invert if this will save space)
+            bm.Optimise(count);
 
             // Save BooleanMatrix
             string shortName = GetValidPath(roomName + "_" + filename + "_" + description + ".alpha");
