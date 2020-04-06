@@ -434,13 +434,14 @@ namespace AGSExportPlugin
             //MessageBox.Show(UsePoTrace.ToString());
 
             string roomXmlFilename = Path.Combine(PathAGSCode, "AGS Rooms.xml");
+            string extraInfoXmlFilename = Path.Combine(PathAGSCode, "AGS Extra Info.xml");
             using (XmlTextWriter output = new XmlTextWriter(roomXmlFilename, Encoding.UTF8))
             {
                 // Export Character Sprite IMGs
                 dia.UpdateStatus("Exporting Sprites");
                 WriteCharacterIMGs(dia, editor.CurrentGame.Sprites, "");
     
-                // Rooms
+                // Create XML file for extra room information (stuff not not in game.agf)
                 output.Formatting = Formatting.Indented;
                 output.Indentation = 2;
                 output.IndentChar = ' ';
@@ -461,6 +462,14 @@ namespace AGSExportPlugin
                 }
                 output.WriteEndElement(); // Rooms
                 output.WriteEndDocument();
+
+                // Create XML file for any other business not in game.agf
+                AGSExtraInfo extraInfo = new AGSExtraInfo(true);
+                foreach (var font in editor.CurrentGame.Fonts)
+                {
+                    extraInfo.Fonts.Add(new AGSExtraInfoFont() { ID = font.ID, FontHeight = font.Height });
+                }
+                GenericXmlSerializer.SerializeToFile<AGSExtraInfo>(extraInfoXmlFilename, extraInfo);
             }
 
             // Copy original *.agf file and script files etc.
@@ -488,7 +497,7 @@ namespace AGSExportPlugin
             proj.PathAgsSpeechFolder = PathSpeechFolder;
             proj.PathAgsAudioFolder = PathAudioFolder;
             proj.GameID = editor.CurrentGame.Settings.GameName;
-            
+
             // Save it
             GenericXmlSerializer.SerializeToFile(PathA2XFile, proj);
 
