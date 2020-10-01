@@ -44,3 +44,10 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 ## Known Issues
 
 * Debugging not currently easy - probably needs a logger to both display and write progress to a file in order to more easily identify export issues.
+* In later versions of AGS, if you encounter an _loadFromRemoteSources_ error, then update the AGSEditor.config.exe file to include the following:
+
+  ```
+  <runtime>
+    <loadFromRemoteSources enabled="true" />
+  </runtime>
+  ```
