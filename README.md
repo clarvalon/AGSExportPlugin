@@ -2,7 +2,7 @@
 
 This is an Editor Plugin for Adventure Game Studio ([AGS](http://www.adventuregamestudio.co.uk)), allowing all game elements and raw assets to be exported.
 
-The intended use for this is as the first stage of conversion of AGS games to the Cross-Platform Adventure Game Engine ([XAGE](https://clarvalon.bitbucket.io)), however is generic enough to be used for other purposes.
+The intended use for this is as the first stage of conversion of AGS games to the Cross-Platform Adventure Game Engine ([XAGE](https://clarvalon.com)), however is generic enough to be used for other purposes.
 
 ## Usage
 
@@ -24,7 +24,7 @@ If you have explicitly specified an output directory, you'll then be able to see
 
 ![Files](/Docs/Images/Files.png?raw=true "Files")
 
-Converting these exported files into an XAGE project will be detailed [here](https://clarvalon.bitbucket.io/documentation.html).
+Converting these exported files into an XAGE project will be detailed [here](https://clarvalon.com/documentation.html).
 
 ## Development
 
